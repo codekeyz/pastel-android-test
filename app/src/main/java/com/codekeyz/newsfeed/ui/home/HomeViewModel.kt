@@ -77,8 +77,8 @@ class HomeViewModel(private val articleRepository: ArticleRepository) : ViewMode
                     is Result.Success -> it.copy(articleFeed = result.data, isLoading = false)
                     is Result.Error ->
                         it.copy(
-                            errorMessage = result.exception.message
-                                ?: "An error occurred while fetching data", isLoading = false
+                            errorMessage = "An error occurred while fetching data. Check your internet connection",
+                            isLoading = false
                         )
 
                 }
