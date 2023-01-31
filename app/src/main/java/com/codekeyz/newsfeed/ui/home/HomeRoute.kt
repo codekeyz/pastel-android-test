@@ -28,11 +28,10 @@ import com.codekeyz.newsfeed.model.Article
 fun HomeRoute(
     homeViewModel: HomeViewModel
 ) {
-
     // UiState of the HomeScreen
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
 
-    HomeRoute(uiState = uiState, refresh = { homeViewModel.refreshData() })
+    HomeRoute(uiState = uiState, refresh = homeViewModel::refreshData)
 }
 
 @Composable
@@ -40,83 +39,67 @@ fun HomeRoute(
     uiState: HomeUiState,
     refresh: () -> Unit,
 ) {
-    when (getHomeScreenType(uiState)) {
-        HomeScreenType.Feed -> {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text(text = stringResource(id = R.string.app_name)) }
-                    )
-                },
-                content = { padding ->
-
-
-                    Box(modifier = Modifier.padding(all = 5.dp)) {
-                        val data = uiState as HomeUiState.HasNews
-                        val context = LocalContext.current
-
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            itemsIndexed(data.articleFeed) { _, item ->
-                                ArticleListItem(
-                                    article = item,
-                                    onclick = { openCustomTab(item, context) })
-                            }
-                        }
-                    }
-                }
-            )
+    Scaffold(
+        topBar = {
+            if (uiState !is HomeUiState.Loading)
+                TopAppBar(
+                    title = { Text(text = stringResource(id = R.string.app_name)) }
+                )
         }
-        HomeScreenType.Loading -> {
-            Scaffold(
-                content = { padding ->
-                    Box(modifier = Modifier
-                        .padding(all = 16.dp)
-                        .fillMaxSize()) {
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
 
-                        Box(modifier = Modifier.align(Alignment.Center)) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                CircularProgressIndicator(color = Color.White, strokeWidth = 1.dp)
-                                Text(text = "fetching data, please wait")
-                            }
-                        }
-                    }
-                }
-            )
+            when (uiState) {
+                is HomeUiState.Loading -> ProgressView()
+                is HomeUiState.Error -> ErrorView(errorMessage = uiState.errorMessage, refresh)
+                is HomeUiState.Success -> SuccessView(uiState.articleFeed)
+            }
         }
-        HomeScreenType.Error -> {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text(text = stringResource(id = R.string.app_name)) }
-                    )
-                },
-                content = { padding ->
-                    Box(modifier = Modifier
-                        .padding(all = 16.dp)
-                        .fillMaxSize()) {
 
-                        Box(modifier = Modifier.align(Alignment.Center)) {
+    }
+}
 
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
+@Composable
+private fun ProgressView() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(color = Color.White, strokeWidth = 1.dp)
+        Text(text = "fetching data, please wait")
+    }
+}
 
-                                Text(text = uiState.errorMessage, textAlign = TextAlign.Center)
-                                Button(onClick = { refresh() }) {
-                                    Text(text = "Refresh")
-                                }
-                            }
-                        }
+@Composable
+private fun ErrorView(errorMessage: String, retry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
 
-                    }
-                }
-            )
+        Text(text = errorMessage, textAlign = TextAlign.Center)
+        Button(onClick = retry) {
+            Text(text = "Refresh")
+        }
+    }
+}
+
+@Composable
+private fun SuccessView(articleFeed: List<Article>, context: Context = LocalContext.current) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        itemsIndexed(articleFeed) { _, item ->
+            ArticleListItem(
+                article = item,
+                onclick = { openCustomTab(item, context) })
         }
     }
 }
@@ -168,32 +151,4 @@ fun openCustomTab(article: Article, context: Context) {
     // activity to start the activity.
 //    activity?.startActivity(customBuilder.intent)
 }
-
-
-private enum class HomeScreenType {
-    Feed,
-    Loading,
-    Error,
-}
-
-/**
- * Returns the current [HomeScreenType] to display, based on whether or not the screen is expanded
- * and the [HomeUiState].
- */
-@Composable
-private fun getHomeScreenType(
-    uiState: HomeUiState
-): HomeScreenType = when (uiState) {
-    is HomeUiState.HasNews -> {
-        HomeScreenType.Feed
-    }
-    is HomeUiState.NoNews -> {
-        if (uiState.isLoading) {
-            HomeScreenType.Loading
-        } else {
-            HomeScreenType.Error
-        }
-    }
-}
-
 
