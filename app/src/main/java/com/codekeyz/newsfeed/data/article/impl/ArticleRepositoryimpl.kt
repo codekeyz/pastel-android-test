@@ -43,8 +43,6 @@ class ArticleCacheImpl(private val context: Context) : ArticleCache {
 
     override suspend fun put(articles: List<Article>) {
         val json = gson.toJson(articles)
-
-        println("we got json here $json")
         context.dataStore.edit { it[ARTICLES_KEY] = json }
     }
 

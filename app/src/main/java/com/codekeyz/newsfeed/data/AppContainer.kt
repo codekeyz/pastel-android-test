@@ -1,9 +1,6 @@
 package com.codekeyz.newsfeed.data
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import com.codekeyz.newsfeed.data.article.ApiService
 import com.codekeyz.newsfeed.data.article.ArticleRepository
 import com.codekeyz.newsfeed.data.article.impl.ArticleCacheImpl
